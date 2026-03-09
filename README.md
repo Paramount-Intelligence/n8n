@@ -1,8 +1,8 @@
-# AI Tooling Specialist Test
+# AI Tooling Specialist
 
 Welcome, and thank you for your interest.
 
-This repository contains the take-home assessment. The exercise is designed to evaluate your ability to design practical AI automations, think through workflow architecture, and create a working prototype or scaffold.
+This is designed to evaluate, ability to design practical AI automations, think through workflow architecture, and create a working prototype or scaffold.
 
 ## Project Brief
 
