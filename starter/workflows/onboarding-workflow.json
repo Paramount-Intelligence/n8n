@@ -1,0 +1,60 @@
+{
+  "workflow_name": "AI Onboarding Automation Workflow",
+  "description": "Automation flow for processing new hire onboarding using AI and workflow orchestration",
+  "steps": [
+    {
+      "step": 1,
+      "name": "New Hire Intake Trigger",
+      "type": "form_trigger",
+      "description": "New employee data submitted through HRIS, Google Form, or onboarding portal"
+    },
+    {
+      "step": 2,
+      "name": "Validate Record",
+      "type": "validation",
+      "description": "Check required fields such as employee name, manager, department, and start date"
+    },
+    {
+      "step": 3,
+      "name": "AI Document Extraction",
+      "type": "ai_processing",
+      "description": "Use LLM API to extract structured fields from uploaded onboarding documents"
+    },
+    {
+      "step": 4,
+      "name": "Create Employee Profile",
+      "type": "data_storage",
+      "description": "Store normalized onboarding record in Airtable or HR database"
+    },
+    {
+      "step": 5,
+      "name": "Generate Onboarding Tasks",
+      "type": "task_generation",
+      "description": "Automatically create tasks for HR, IT, and manager based on employee role"
+    },
+    {
+      "step": 6,
+      "name": "Generate Personalized Onboarding Plan",
+      "type": "ai_generation",
+      "description": "Use AI to create a role-specific onboarding plan and welcome summary"
+    },
+    {
+      "step": 7,
+      "name": "Send Notifications",
+      "type": "communication",
+      "description": "Send onboarding summaries to HR and hiring manager via email or Slack"
+    },
+    {
+      "step": 8,
+      "name": "Schedule Orientation",
+      "type": "calendar_integration",
+      "description": "Create onboarding meetings in Google Calendar or Outlook"
+    },
+    {
+      "step": 9,
+      "name": "Milestone Monitoring",
+      "type": "automation",
+      "description": "Trigger onboarding milestone checks for Day 1, Week 1, and Month 1"
+    }
+  ]
+}
