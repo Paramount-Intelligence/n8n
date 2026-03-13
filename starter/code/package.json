@@ -1,0 +1,18 @@
+{
+  "name": "onboarding-ai-scaffold",
+  "version": "1.0.0",
+  "description": "AI-powered onboarding automation prototype scaffold — Phase 4",
+  "type": "module",
+  "main": "extract_onboarding.js",
+  "scripts": {
+    "extract": "node extract_onboarding.js",
+    "extract:save": "node extract_onboarding.js --input ./sample_input.json --output ./output_result.json",
+    "demo": "node extract_onboarding.js --input ./sample_input.json"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
