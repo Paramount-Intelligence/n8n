@@ -1,0 +1,40 @@
+{
+  "_source": "google_forms",
+  "_submitted_at": "2025-03-13T09:14:00Z",
+  "_form_version": "intake-v3",
+
+  "personal": {
+    "full_name": "Priya Anand",
+    "preferred_name": "Pri",
+    "email": "priya.anand@gmail.com",
+    "phone": "+44 7712 334 891"
+  },
+
+  "role": {
+    "title": "Senior Product Designer",
+    "department": "Product",
+    "type": "Full-time permanent",
+    "start_date": "2025-04-14",
+    "end_date": null,
+    "manager": "James Okonkwo",
+    "cost_centre": "CC-PROD-007",
+    "location": "London, UK",
+    "remote_status": "hybrid"
+  },
+
+  "compensation": {
+    "currency": "GBP",
+    "amount": 78000,
+    "frequency": "annual"
+  },
+
+  "documents_submitted": [
+    "Signed offer letter",
+    "Passport (UK)",
+    "Right to work declaration",
+    "NDA (signed)",
+    "P45 from previous employer"
+  ],
+
+  "notes": "Priya is relocating from Bristol. She has requested a standing desk and dual monitors. She mentioned she uses Figma extensively and has asked about access to the full Adobe Creative Suite. Her onboarding buddy has not yet been assigned."
+}

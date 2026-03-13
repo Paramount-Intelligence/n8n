@@ -1,0 +1,100 @@
+{
+  "record_id": "ONB-2025-0142",
+  "meta": {
+    "created_at": "2025-03-13T09:14:22.000Z",
+    "updated_at": "2025-03-13T09:14:28.000Z",
+    "source_system": "google_forms",
+    "schema_version": "1.0.0",
+    "assigned_hr_contact": null
+  },
+  "pipeline_status": {
+    "current_stage": "intake",
+    "stages": {
+      "intake": {
+        "status": "complete",
+        "started_at": "2025-03-13T09:14:22.000Z",
+        "completed_at": "2025-03-13T09:14:28.000Z",
+        "error_ref": null
+      },
+      "validation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      },
+      "profile_creation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      },
+      "task_routing": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      },
+      "plan_generation": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      },
+      "communication": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      },
+      "tracking": {
+        "status": "pending",
+        "started_at": null,
+        "completed_at": null,
+        "error_ref": null
+      }
+    }
+  },
+  "extracted": {
+    "extraction_status": "complete",
+    "employee": {
+      "full_name": "Priya Anand",
+      "preferred_name": "Pri",
+      "personal_email": "priya.anand@gmail.com",
+      "phone_number": "+44 7712 334 891"
+    },
+    "employment": {
+      "job_title": "Senior Product Designer",
+      "department": "Product",
+      "employment_type": "full_time",
+      "start_date": "2025-04-14",
+      "end_date": null,
+      "work_location": "London, UK",
+      "remote_status": "hybrid",
+      "reporting_manager": "James Okonkwo",
+      "cost_centre": "CC-PROD-007",
+      "salary_currency": "GBP",
+      "salary_amount": 78000,
+      "salary_frequency": "annual"
+    },
+    "documents_present": [
+      "Signed offer letter",
+      "Passport (UK)",
+      "Right to work declaration",
+      "NDA (signed)",
+      "P45 from previous employer"
+    ],
+    "extraction_notes": [
+      "employment_type inferred as 'full_time' from stated 'Full-time permanent'.",
+      "No tax declaration form (P46/Starter Checklist) identified — P45 present instead. Validation stage should confirm whether this satisfies HMRC requirements.",
+      "Notes field contains equipment preferences (standing desk, dual monitors) and software access requests (Figma, Adobe Creative Suite) — these are not mapped to schema fields but should be routed to IT task queue in Stage 4.",
+      "Onboarding buddy not yet assigned — flagged for HR to assign before Stage 6 communication.",
+      "Employee is relocating from Bristol — HR may wish to confirm London office address for payroll and right-to-work records."
+    ]
+  },
+  "validation_result": null,
+  "provisioning": null,
+  "onboarding_plan": null,
+  "communications": null,
+  "tracking": null,
+  "error_log": []
+}
