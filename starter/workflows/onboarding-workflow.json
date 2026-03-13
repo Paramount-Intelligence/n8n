@@ -1,0 +1,367 @@
+{
+  "name": "AI Onboarding Automation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-hire-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node_001",
+      "name": "Webhook — New Hire Form Submitted",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "notes": "Triggered when a new hire submits the intake form via Google Forms or a custom portal. Receives name, email, role, department, manager, start date, location, and uploaded document URLs."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json['full_name'] }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json['start_date'] }}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{ $json['department'] }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "node_002",
+      "name": "IF — Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "notes": "Checks that the three minimum required fields are present before proceeding. If any are missing, the record is routed to the HR alert branch."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding-alerts",
+        "text": "⚠️ Incomplete onboarding intake received for {{ $json['full_name'] || 'Unknown' }}. Required fields are missing. Please review and resubmit.",
+        "otherOptions": {}
+      },
+      "id": "node_003",
+      "name": "Slack — Alert HR (Incomplete Record)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [700, 500],
+      "notes": "Sends an alert to the HR Slack channel if the intake form is missing required fields. Workflow stops here until HR corrects and resubmits."
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an HR onboarding assistant. Extract and validate the following fields from the submitted employee intake record: full_name, personal_email, job_title, department, manager_name, employment_type, start_date, location, signed_documents (list), missing_documents (list — expected: offer_letter, nda_signed, id_proof), and issues (list of problems or empty list). Return ONLY valid JSON with no explanation."
+            },
+            {
+              "role": "user",
+              "content": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0,
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "node_004",
+      "name": "OpenAI — Extract and Validate Intake Data",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [700, 300],
+      "notes": "Sends the intake form data to GPT-4o for structured extraction and validation. Returns a clean JSON record with all fields normalized and any issues flagged."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json['missing_documents'].length }}",
+              "operation": "equal",
+              "value2": "0"
+            }
+          ]
+        }
+      },
+      "id": "node_005",
+      "name": "IF — Documents Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [950, 300],
+      "notes": "Routes the workflow based on whether all required documents have been submitted. If documents are missing, HR is notified and the workflow pauses."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding-alerts",
+        "text": "⚠️ Missing documents for {{ $node['Webhook — New Hire Form Submitted'].json['full_name'] }}. Missing: {{ $json['missing_documents'].join(', ') }}. Please follow up before onboarding can continue.",
+        "otherOptions": {}
+      },
+      "id": "node_006",
+      "name": "Slack — Alert HR (Missing Documents)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1200, 500],
+      "notes": "Notifies HR of missing documents. Onboarding automation is paused until documents are received and the record is resubmitted or updated."
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": "YOUR_AIRTABLE_BASE_ID",
+        "table": "Onboarding Records",
+        "fields": {
+          "Employee ID": "={{ $uuid }}",
+          "Full Name": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }}",
+          "Personal Email": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['personal_email'] }}",
+          "Company Email": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'].toLowerCase().replace(' ', '.') + '@company.com' }}",
+          "Job Title": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['job_title'] }}",
+          "Department": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['department'] }}",
+          "Manager": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['manager_name'] }}",
+          "Location": "={{ $node['Webhook — New Hire Form Submitted'].json['location'] }}",
+          "Start Date": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}",
+          "Employment Type": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['employment_type'] }}",
+          "Status": "ONBOARDING_IN_PROGRESS",
+          "Documents Verified": true,
+          "Created At": "={{ new Date().toISOString() }}"
+        }
+      },
+      "id": "node_007",
+      "name": "Airtable — Create Onboarding Record",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [1200, 300],
+      "notes": "Creates the canonical onboarding record in Airtable. This record is the source of truth for all downstream steps and tracking."
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an onboarding operations coordinator. Generate a complete onboarding task list based on the employee profile. For each task include: task_name, assigned_to (IT/HR/Manager/New Hire), due_offset (days relative to start date, negative = before start), priority (high/medium/low), and depends_on (array of task names). Return ONLY a JSON array."
+            },
+            {
+              "role": "user",
+              "content": "={{ JSON.stringify($node['Airtable — Create Onboarding Record'].json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "node_008",
+      "name": "OpenAI — Generate Task List",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1450, 300],
+      "notes": "Uses GPT-4o to generate a role and department specific task list. Output is a structured JSON array that feeds into task routing steps."
+    },
+    {
+      "parameters": {
+        "project": "IT-ONBOARD",
+        "summary": "New hire setup: {{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }} ({{ $node['OpenAI — Extract and Validate Intake Data'].json['job_title'] }})",
+        "description": "New hire starting {{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}.\n\nRequired provisioning:\n- MacBook Pro (or Windows if applicable)\n- Company email account\n- Slack, Jira, Figma, Google Workspace\n- VPN access\n\nLaptop must be ready 3 business days before start date.",
+        "issueType": "Task",
+        "priority": "High",
+        "assignee": "it-onboarding-team"
+      },
+      "id": "node_009",
+      "name": "Jira — Create IT Provisioning Ticket",
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [1700, 200],
+      "notes": "Creates an IT provisioning ticket in Jira with all required hardware and software access details. Due date is automatically set to 3 business days before the employee's start date."
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a friendly onboarding guide. Write a personalized first-week onboarding plan for the new hire. Include: warm welcome by name, Day 1 logistics, first-week priorities (3-5 items), key contacts table, recommended tools to explore, required compliance items with checkboxes, and a note about their 30-day check-in. Format in markdown. Tone: warm, clear, encouraging."
+            },
+            {
+              "role": "user",
+              "content": "={{ JSON.stringify($node['Airtable — Create Onboarding Record'].json) }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "node_010",
+      "name": "OpenAI — Generate Onboarding Plan",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [1700, 350],
+      "notes": "Generates a personalized, markdown-formatted onboarding plan tailored to the employee's role, department, location, and manager. Output is stored in Notion and attached to the welcome email."
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "pageId": "YOUR_NOTION_DATABASE_ID",
+        "title": "Onboarding Plan — {{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }} ({{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }})",
+        "properties": {
+          "content": "={{ $node['OpenAI — Generate Onboarding Plan'].json['choices'][0]['message']['content'] }}"
+        }
+      },
+      "id": "node_011",
+      "name": "Notion — Store Onboarding Plan",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 1,
+      "position": [1950, 350],
+      "notes": "Saves the AI-generated onboarding plan as a Notion page inside the Onboarding Plans database. The page is linked to the Airtable record."
+    },
+    {
+      "parameters": {
+        "fromEmail": "people@company.com",
+        "toEmail": "={{ $node['OpenAI — Extract and Validate Intake Data'].json['personal_email'] }}",
+        "subject": "Welcome to the team, {{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'].split(' ')[0] }}! 🎉",
+        "emailType": "text",
+        "message": "Hi {{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'].split(' ')[0] }},\n\nWe are so excited to have you joining us as {{ $node['OpenAI — Extract and Validate Intake Data'].json['job_title'] }} on {{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}.\n\nYour manager {{ $node['OpenAI — Extract and Validate Intake Data'].json['manager_name'] }} will be in touch shortly to welcome you and share what to expect on Day 1.\n\nYour personalized onboarding plan is available here: {{ $node['Notion — Store Onboarding Plan'].json['url'] }}\n\nWe cannot wait to see what you will accomplish with us.\n\n— The People & Operations Team",
+        "options": {}
+      },
+      "id": "node_012",
+      "name": "Gmail — Send Welcome Email to New Hire",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1950, 200],
+      "notes": "Sends a personalized welcome email to the new hire's personal email address. Includes a link to their Notion onboarding plan."
+    },
+    {
+      "parameters": {
+        "fromEmail": "people@company.com",
+        "toEmail": "={{ $node['Webhook — New Hire Form Submitted'].json['manager_email'] }}",
+        "subject": "Your new hire starts {{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}: {{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }}",
+        "emailType": "text",
+        "message": "Hi {{ $node['OpenAI — Extract and Validate Intake Data'].json['manager_name'] }},\n\n{{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }} is joining your team as {{ $node['OpenAI — Extract and Validate Intake Data'].json['job_title'] }} on {{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}. All documents have been verified.\n\nAction items for you:\n- Schedule a Day 1 welcome call\n- Arrange a team introduction by end of Week 1\n- Share any team-specific resources or projects\n\nIT provisioning is underway. All access should be ready by Day 1.\n\n— HR Operations",
+        "options": {}
+      },
+      "id": "node_013",
+      "name": "Gmail — Send Manager Briefing",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1950, 500],
+      "notes": "Sends a concise briefing email to the hiring manager with the new hire's details, pending action items, and IT status."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": "YOUR_AIRTABLE_BASE_ID",
+        "table": "Onboarding Records",
+        "id": "={{ $node['Airtable — Create Onboarding Record'].json['id'] }}",
+        "fields": {
+          "Status": "COMMUNICATIONS_SENT",
+          "Onboarding Plan URL": "={{ $node['Notion — Store Onboarding Plan'].json['url'] }}",
+          "IT Ticket ID": "={{ $node['Jira — Create IT Provisioning Ticket'].json['key'] }}",
+          "Last Updated": "={{ new Date().toISOString() }}"
+        }
+      },
+      "id": "node_014",
+      "name": "Airtable — Update Record Status",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [2200, 350],
+      "notes": "Updates the Airtable onboarding record with the final status and links to the Notion plan and Jira IT ticket. This closes the main workflow and sets up milestone tracking."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding",
+        "text": "✅ Onboarding workflow complete for *{{ $node['OpenAI — Extract and Validate Intake Data'].json['full_name'] }}* ({{ $node['OpenAI — Extract and Validate Intake Data'].json['job_title'] }}, {{ $node['OpenAI — Extract and Validate Intake Data'].json['department'] }}).\n\nStart date: {{ $node['OpenAI — Extract and Validate Intake Data'].json['start_date'] }}\nManager: {{ $node['OpenAI — Extract and Validate Intake Data'].json['manager_name'] }}\nOnboarding plan: {{ $node['Notion — Store Onboarding Plan'].json['url'] }}\nIT ticket: {{ $node['Jira — Create IT Provisioning Ticket'].json['key'] }}",
+        "otherOptions": {}
+      },
+      "id": "node_015",
+      "name": "Slack — Notify HR Onboarding Complete",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [2200, 200],
+      "notes": "Posts a summary to the HR onboarding Slack channel confirming that the workflow completed successfully, with links to the onboarding plan and IT ticket."
+    }
+  ],
+  "connections": {
+    "Webhook — New Hire Form Submitted": {
+      "main": [
+        [{ "node": "IF — Validate Required Fields", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF — Validate Required Fields": {
+      "main": [
+        [{ "node": "OpenAI — Extract and Validate Intake Data", "type": "main", "index": 0 }],
+        [{ "node": "Slack — Alert HR (Incomplete Record)", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI — Extract and Validate Intake Data": {
+      "main": [
+        [{ "node": "IF — Documents Complete?", "type": "main", "index": 0 }]
+      ]
+    },
+    "IF — Documents Complete?": {
+      "main": [
+        [{ "node": "Airtable — Create Onboarding Record", "type": "main", "index": 0 }],
+        [{ "node": "Slack — Alert HR (Missing Documents)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Airtable — Create Onboarding Record": {
+      "main": [
+        [
+          { "node": "OpenAI — Generate Task List", "type": "main", "index": 0 },
+          { "node": "OpenAI — Generate Onboarding Plan", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "OpenAI — Generate Task List": {
+      "main": [
+        [{ "node": "Jira — Create IT Provisioning Ticket", "type": "main", "index": 0 }]
+      ]
+    },
+    "OpenAI — Generate Onboarding Plan": {
+      "main": [
+        [{ "node": "Notion — Store Onboarding Plan", "type": "main", "index": 0 }]
+      ]
+    },
+    "Notion — Store Onboarding Plan": {
+      "main": [
+        [
+          { "node": "Gmail — Send Welcome Email to New Hire", "type": "main", "index": 0 },
+          { "node": "Gmail — Send Manager Briefing", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Jira — Create IT Provisioning Ticket": {
+      "main": [
+        [{ "node": "Airtable — Update Record Status", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gmail — Send Welcome Email to New Hire": {
+      "main": [
+        [{ "node": "Airtable — Update Record Status", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gmail — Send Manager Briefing": {
+      "main": [
+        [{ "node": "Slack — Notify HR Onboarding Complete", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "description": "End-to-end AI-powered employee onboarding automation. Handles intake, AI extraction, document validation, task generation, onboarding plan creation, and multi-channel communications.",
+    "version": "1.0.0"
+  }
+}
