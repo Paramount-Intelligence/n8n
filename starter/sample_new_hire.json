@@ -1,0 +1,28 @@
+{
+  "employee": {
+    "full_name": "Alex Morgan",
+    "personal_email": "alex.morgan@example.com",
+    "work_email": "alex.morgan@company.com",
+    "job_title": "Senior Data Scientist",
+    "department": "Data Science",
+    "location": "US-Remote",
+    "manager_name": "Taylor Reed",
+    "employment_type": "full-time",
+    "start_date": "2026-03-23"
+  },
+  "compliance": {
+    "required_docs_received": [
+      "government_id",
+      "signed_offer"
+    ]
+  },
+  "access_requirements": {
+    "systems_requested": [
+      "GitHub",
+      "Jira",
+      "Slack",
+      "Data Warehouse"
+    ],
+    "privileged_access_requested": true
+  }
+}
