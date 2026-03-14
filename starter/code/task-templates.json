@@ -1,0 +1,213 @@
+{
+  "_meta": {
+    "description": "Onboarding task template library. Tasks are selected and assigned based on the new hire's profile attributes.",
+    "version": "1.0.0",
+    "last_updated": "2026-03-13"
+  },
+  "task_templates": [
+    {
+      "id": "HR-001",
+      "title": "Submit signed offer letter",
+      "category": "HR Admin",
+      "owner": "new_hire",
+      "due_offset_days": -5,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "HR-002",
+      "title": "Complete tax form (W-4 or local equivalent)",
+      "category": "HR Admin",
+      "owner": "new_hire",
+      "due_offset_days": -3,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "HR-003",
+      "title": "Submit government-issued ID for I-9 / right-to-work verification",
+      "category": "HR Admin",
+      "owner": "new_hire",
+      "due_offset_days": -3,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "HR-004",
+      "title": "Sign NDA and IP agreement",
+      "category": "HR Admin",
+      "owner": "new_hire",
+      "due_offset_days": -2,
+      "applies_to": {
+        "employment_type": ["full-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "HR-005",
+      "title": "Acknowledge IT security policy and code of conduct",
+      "category": "HR Admin",
+      "owner": "new_hire",
+      "due_offset_days": 1,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "medium"
+    },
+    {
+      "id": "IT-001",
+      "title": "Provision laptop and ship to new hire address",
+      "category": "IT Setup",
+      "owner": "it_team",
+      "due_offset_days": -7,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["remote", "hybrid"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "IT-002",
+      "title": "Create company email account",
+      "category": "IT Setup",
+      "owner": "it_team",
+      "due_offset_days": -3,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "IT-003",
+      "title": "Set up VPN access",
+      "category": "IT Setup",
+      "owner": "it_team",
+      "due_offset_days": -1,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["remote", "hybrid"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "IT-004",
+      "title": "Assign software licenses (Slack, Google Workspace, Notion, etc.)",
+      "category": "IT Setup",
+      "owner": "it_team",
+      "due_offset_days": -1,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "medium"
+    },
+    {
+      "id": "IT-005",
+      "title": "Issue office access badge",
+      "category": "Access & Permissions",
+      "owner": "it_team",
+      "due_offset_days": 0,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["on-site", "hybrid"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "MGR-001",
+      "title": "Schedule Day 1 welcome call with new hire",
+      "category": "Manager Actions",
+      "owner": "manager",
+      "due_offset_days": -2,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "MGR-002",
+      "title": "Assign onboarding buddy",
+      "category": "Manager Actions",
+      "owner": "manager",
+      "due_offset_days": -1,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["all"]
+      },
+      "priority": "medium"
+    },
+    {
+      "id": "MGR-003",
+      "title": "Share team org chart and key contacts list",
+      "category": "Manager Actions",
+      "owner": "manager",
+      "due_offset_days": 0,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "medium"
+    },
+    {
+      "id": "TRAIN-001",
+      "title": "Complete mandatory compliance training",
+      "category": "Training",
+      "owner": "new_hire",
+      "due_offset_days": 7,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "TRAIN-002",
+      "title": "Complete data privacy and security training",
+      "category": "Training",
+      "owner": "new_hire",
+      "due_offset_days": 7,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "high"
+    },
+    {
+      "id": "CULTURE-001",
+      "title": "Join relevant Slack channels",
+      "category": "Culture & Integration",
+      "owner": "new_hire",
+      "due_offset_days": 1,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time", "contractor"],
+        "location": ["all"]
+      },
+      "priority": "low"
+    },
+    {
+      "id": "CULTURE-002",
+      "title": "Schedule intro coffee chats with 3 team members",
+      "category": "Culture & Integration",
+      "owner": "new_hire",
+      "due_offset_days": 5,
+      "applies_to": {
+        "employment_type": ["full-time", "part-time"],
+        "location": ["all"]
+      },
+      "priority": "low"
+    }
+  ]
+}

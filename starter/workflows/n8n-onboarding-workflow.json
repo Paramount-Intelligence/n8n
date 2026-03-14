@@ -1,0 +1,300 @@
+{
+  "name": "AI Onboarding Automation – Main Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-hire-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook – ATS New Hire Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 300],
+      "notes": "Receives new hire payload from ATS (Greenhouse/Lever/Workday) when a candidate is marked Hired."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate required fields from ATS payload\nconst required = ['full_name', 'email', 'job_title', 'department', 'start_date', 'manager_name', 'location', 'employment_type'];\nconst item = items[0].json;\nconst missing = required.filter(f => !item[f]);\n\nreturn [{\n  json: {\n    ...item,\n    onboarding_id: 'OB-' + Date.now(),\n    status: 'INITIATED',\n    missing_fields: missing,\n    has_missing: missing.length > 0,\n    created_at: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Function – Validate & Assign ID",
+      "type": "n8n-nodes-base.function",
+      "position": [460, 300],
+      "notes": "Validates required fields, assigns a unique onboarding_id, and flags missing fields."
+    },
+    {
+      "parameters": {
+        "baseId": "{{AIRTABLE_BASE_ID}}",
+        "tableId": "Onboarding Records",
+        "operation": "create",
+        "fields": {
+          "onboarding_id": "={{$json.onboarding_id}}",
+          "full_name": "={{$json.full_name}}",
+          "email": "={{$json.email}}",
+          "job_title": "={{$json.job_title}}",
+          "department": "={{$json.department}}",
+          "start_date": "={{$json.start_date}}",
+          "manager_name": "={{$json.manager_name}}",
+          "location": "={{$json.location}}",
+          "employment_type": "={{$json.employment_type}}",
+          "status": "INITIATED",
+          "created_at": "={{$json.created_at}}"
+        }
+      },
+      "name": "Airtable – Create Onboarding Record",
+      "type": "n8n-nodes-base.airtable",
+      "position": [680, 300],
+      "notes": "Creates the master onboarding record in Airtable with status INITIATED."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.has_missing}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "IF – Missing Fields?",
+      "type": "n8n-nodes-base.if",
+      "position": [900, 300],
+      "notes": "Routes to Slack alert if required fields are missing, otherwise continues to welcome email."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding-alerts",
+        "text": "⚠️ New hire record for *{{$json.full_name}}* ({{$json.onboarding_id}}) is missing required fields:\n{{$json.missing_fields.join(', ')}}\n\nPlease update the ATS record before onboarding can proceed."
+      },
+      "name": "Slack – Alert HR: Missing Fields",
+      "type": "n8n-nodes-base.slack",
+      "position": [1120, 180],
+      "notes": "Sends a Slack alert to the HR onboarding channel listing the missing fields."
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@company.com",
+        "toEmail": "={{$json.email}}",
+        "subject": "Welcome to the team, {{$json.full_name}}! Your onboarding starts here.",
+        "text": "Hi {{$json.first_name}},\n\nWe're so excited to have you joining us on {{$json.start_date}}!\n\nTo get your onboarding started, please complete your intake form here:\n{{$json.intake_form_url}}\n\nThis should only take about 5 minutes. Once submitted, we'll begin preparing everything for your first day.\n\nYour manager {{$json.manager_name}} has also been notified and will be in touch soon.\n\nWelcome aboard!\n\nThe HR Team"
+      },
+      "name": "Gmail – Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [1120, 420],
+      "notes": "Sends personalized welcome email to the new hire with intake form link."
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-4o",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an HR document processing assistant. Extract structured fields from the provided document text and return valid JSON only. No explanation text."
+            },
+            {
+              "role": "user",
+              "content": "Extract onboarding fields from this document:\n\n{{$json.document_text}}\n\nReturn JSON with: full_name, date_of_birth, document_type, document_number, expiry_date, issuing_authority, issues_found (array), requires_manual_review (boolean)."
+            }
+          ],
+          "temperature": 0.1,
+          "max_tokens": 800
+        }
+      },
+      "name": "OpenAI – Document Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1340, 300],
+      "notes": "Calls GPT-4o to extract structured fields from each uploaded onboarding document."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse AI extraction response\nconst aiResponse = JSON.parse(items[0].json.choices[0].message.content);\nconst needsReview = aiResponse.requires_manual_review || aiResponse.issues_found.length > 0;\n\nreturn [{\n  json: {\n    ...items[0].json,\n    extracted_data: aiResponse,\n    needs_manual_review: needsReview,\n    extraction_timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "name": "Function – Parse AI Extraction",
+      "type": "n8n-nodes-base.function",
+      "position": [1560, 300],
+      "notes": "Parses the AI JSON response and sets the needs_manual_review flag."
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-4o",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an onboarding experience designer. Create personalized first-week onboarding plans in clean Markdown format. Be warm, professional, and specific to the employee's role."
+            },
+            {
+              "role": "user",
+              "content": "Create a first-week onboarding plan for:\n- Name: {{$json.full_name}}\n- Job Title: {{$json.job_title}}\n- Department: {{$json.department}}\n- Location: {{$json.location}}\n- Employment Type: {{$json.employment_type}}\n- Start Date: {{$json.start_date}}\n- Manager: {{$json.manager_name}}\n\nInclude: welcome message, Day 1 priorities (3-5 bullets), key contacts, required tools setup, recommended training, one culture/team integration suggestion. Format as Markdown."
+            }
+          ],
+          "temperature": 0.7,
+          "max_tokens": 1200
+        }
+      },
+      "name": "OpenAI – Generate Onboarding Plan",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1780, 300],
+      "notes": "Calls GPT-4o to generate a personalized first-week onboarding plan for the new hire."
+    },
+    {
+      "parameters": {
+        "url": "https://api.openai.com/v1/chat/completions",
+        "method": "POST",
+        "headers": {
+          "Authorization": "Bearer {{OPENAI_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "model": "gpt-3.5-turbo",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are an HR communications assistant. Write concise, warm, professional manager briefing summaries."
+            },
+            {
+              "role": "user",
+              "content": "Write a manager briefing for {{$json.manager_name}} about their new hire {{$json.full_name}} ({{$json.job_title}}) starting on {{$json.start_date}}. Include: introduction, 2-3 suggested first-week actions, any pending items: {{$json.pending_items}}. Under 150 words. Plain text."
+            }
+          ],
+          "temperature": 0.5,
+          "max_tokens": 400
+        }
+      },
+      "name": "OpenAI – Generate Manager Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [2000, 300],
+      "notes": "Calls GPT-3.5-turbo to generate a concise manager briefing email."
+    },
+    {
+      "parameters": {
+        "baseId": "{{AIRTABLE_BASE_ID}}",
+        "tableId": "Onboarding Records",
+        "operation": "update",
+        "id": "={{$json.airtable_record_id}}",
+        "fields": {
+          "status": "PLAN_GENERATED",
+          "onboarding_plan_url": "={{$json.notion_page_url}}",
+          "plan_generated_at": "={{new Date().toISOString()}}"
+        }
+      },
+      "name": "Airtable – Update Status: Plan Generated",
+      "type": "n8n-nodes-base.airtable",
+      "position": [2220, 300],
+      "notes": "Updates the onboarding record status and stores the Notion page URL."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding-alerts",
+        "text": "✅ Onboarding plan generated for *{{$json.full_name}}* ({{$json.onboarding_id}})\n📅 Start Date: {{$json.start_date}}\n👔 Role: {{$json.job_title}} – {{$json.department}}\n📋 Plan: {{$json.notion_page_url}}"
+      },
+      "name": "Slack – Notify HR: Plan Ready",
+      "type": "n8n-nodes-base.slack",
+      "position": [2440, 300],
+      "notes": "Posts a confirmation to the HR Slack channel when the onboarding plan is ready."
+    },
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 6,
+              "unit": "hours"
+            }
+          ]
+        }
+      },
+      "name": "Schedule – Day-1 Readiness Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [240, 600],
+      "notes": "Runs every 6 hours to check onboarding readiness for upcoming start dates."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Day-1 readiness checklist\nconst hire = items[0].json;\nconst startDate = new Date(hire.start_date);\nconst now = new Date();\nconst hoursUntilStart = (startDate - now) / (1000 * 60 * 60);\n\nif (hoursUntilStart > 24) return []; // Not yet within 24hr window\n\nconst checks = {\n  docs_verified: hire.status_docs === 'VERIFIED',\n  it_ready: hire.status_it === 'COMPLETE',\n  plan_shared: !!hire.onboarding_plan_url,\n  manager_notified: hire.manager_notified === true\n};\n\nconst blockers = Object.entries(checks)\n  .filter(([k, v]) => !v)\n  .map(([k]) => k);\n\nreturn [{\n  json: {\n    ...hire,\n    readiness_checks: checks,\n    blockers: blockers,\n    is_ready: blockers.length === 0\n  }\n}];"
+      },
+      "name": "Function – Readiness Check Logic",
+      "type": "n8n-nodes-base.function",
+      "position": [680, 600],
+      "notes": "Checks all Day-1 readiness criteria within 24 hours of start date."
+    },
+    {
+      "parameters": {
+        "channel": "#hr-onboarding-alerts",
+        "text": "🚨 *Day-1 Readiness BLOCKED* for {{$json.full_name}} (starts {{$json.start_date}})\n\nBlockers: {{$json.blockers.join(', ')}}\n\nPlease resolve immediately."
+      },
+      "name": "Slack – Alert: Readiness Blocked",
+      "type": "n8n-nodes-base.slack",
+      "position": [900, 600],
+      "notes": "Sends priority Slack alert when Day-1 readiness checks fail within 24 hours of start."
+    }
+  ],
+  "connections": {
+    "Webhook – ATS New Hire Trigger": {
+      "main": [["Function – Validate & Assign ID"]]
+    },
+    "Function – Validate & Assign ID": {
+      "main": [["Airtable – Create Onboarding Record"]]
+    },
+    "Airtable – Create Onboarding Record": {
+      "main": [["IF – Missing Fields?"]]
+    },
+    "IF – Missing Fields?": {
+      "main": [
+        ["Slack – Alert HR: Missing Fields"],
+        ["Gmail – Send Welcome Email"]
+      ]
+    },
+    "Gmail – Send Welcome Email": {
+      "main": [["OpenAI – Document Extraction"]]
+    },
+    "OpenAI – Document Extraction": {
+      "main": [["Function – Parse AI Extraction"]]
+    },
+    "Function – Parse AI Extraction": {
+      "main": [["OpenAI – Generate Onboarding Plan"]]
+    },
+    "OpenAI – Generate Onboarding Plan": {
+      "main": [["OpenAI – Generate Manager Summary"]]
+    },
+    "OpenAI – Generate Manager Summary": {
+      "main": [["Airtable – Update Status: Plan Generated"]]
+    },
+    "Airtable – Update Status: Plan Generated": {
+      "main": [["Slack – Notify HR: Plan Ready"]]
+    },
+    "Schedule – Day-1 Readiness Check": {
+      "main": [["Function – Readiness Check Logic"]]
+    },
+    "Function – Readiness Check Logic": {
+      "main": [["Slack – Alert: Readiness Blocked"]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "onboarding-error-handler"
+  },
+  "meta": {
+    "description": "Main AI-powered onboarding automation workflow. Handles new hire intake, document processing, AI plan generation, and Day-1 readiness checks.",
+    "version": "1.0.0",
+    "author": "Dileep Singh",
+    "created": "2026-03-13"
+  }
+}

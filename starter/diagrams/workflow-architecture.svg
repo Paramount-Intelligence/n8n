@@ -1,0 +1,70 @@
+AI Onboarding Automation – Workflow Architecture
+Paramount Intelligence Technical Assessment – Task 1 | Dileep Singh
+TRIGGER LAYER
+ATS System
+(Greenhouse / Lever / Workday)
+Webhook → n8n
+Candidate marked "Hired"
+INTAKE & VALIDATION
+Validate Fields
+Required field check
+Create Airtable Record
+status: INITIATED
+Send Welcome Email
++ Intake Form Link
+⚠️ Slack Alert
+Missing fields → HR
+DOCUMENT COLLECTION & AI PROCESSING
+Document Upload
+DocuSign / Google Drive
+AI Classification
+GPT-4o Vision
+AI Field Extraction
+Structured JSON output
+Completeness Gate
+All docs verified?
+AI LAYER (OpenAI GPT-4o)
+Task Orchestration
+Role-based task matching
+Onboarding Plan Gen
+Personalized Markdown plan
+Communication Drafting
+Welcome + Manager emails
+TASK ROUTING & IT PROVISIONING
+Asana / Jira Tasks
+HR + IT + Manager
+IT Provisioning
+Laptop, email, VPN, badge
+Calendar & Scheduling
+Orientation, 1:1s, buddy
+Notion Plan Delivery
+Shared with hire + manager
+MONITORING & MILESTONE TRACKING
+Day-1 Readiness Check
+24hr before start date
+Milestone Check-ins
+Day 3, 7, 30 prompts
+Airtable HR Dashboard
+Real-time status visibility
+DATA STORES
+Airtable
+Master records
+Google Drive
+Documents
+Audit Log Table
+AI calls + status
+n8n Exec Logs
+Workflow runs
+Technology Stack & Integration Map
+Automation:
+n8n (self-hosted) or Zapier
+AI:
+OpenAI GPT-4o (extraction, planning) · GPT-3.5-turbo (comms)
+Data:
+Airtable (records) · Google Drive (documents) · Google Sheets (reports)
+Comms:
+Gmail / Outlook · Slack · Google Calendar
+Tasks:
+Asana / Jira · Notion / Confluence (plan delivery)
+STATUS FLOW:
+INITIATED → INTAKE_COMPLETE → DOCS_VERIFIED → PLAN_GENERATED → IT_READY → DAY1_READY → ACTIVE → COMPLETE
