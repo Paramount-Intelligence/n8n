@@ -1,0 +1,68 @@
+{
+  "name": "AI Onboarding Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-hire"
+      },
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.httpTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json;\nreturn [{ json: data }];"
+      },
+      "name": "Process Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const processed = items[0].json;\nprocessed.onboarding_plan = 'Sample plan generated';\nreturn [{ json: processed }];"
+      },
+      "name": "AI Onboarding Plan",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_GOOGLE_SHEET_ID",
+        "range": "A1",
+        "options": {}
+      },
+      "name": "Update Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          { "node": "Process Data", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Process Data": {
+      "main": [
+        [
+          { "node": "AI Onboarding Plan", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "AI Onboarding Plan": {
+      "main": [
+        [
+          { "node": "Update Sheet", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
