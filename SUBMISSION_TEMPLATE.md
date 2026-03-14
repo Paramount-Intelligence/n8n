@@ -2,7 +2,7 @@
 - Full Name: Syeda Fariya Raza
 - Email: sy.faraza2899@gmail.com
 - LinkedIn or Portfolio: https://www.linkedin.com/in/fariyar/
-- Submission Date: 2026-03-12
+- Submission Date: 2026-03-13
 
 ## Overview
 I designed and scaffolded an AI-powered onboarding automation system that combines deterministic workflow orchestration with controlled AI usage for extraction, classification, personalization, and communication drafting. The submission includes a detailed architecture document, production-oriented prompt pack, a workflow JSON scaffold, and a runnable Python prototype that demonstrates core routing and task generation logic.
