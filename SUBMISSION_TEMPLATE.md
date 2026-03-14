@@ -101,5 +101,5 @@ See full prompts in `starter/prompts/prompts.md`.
    - `sample_standard_hire.json` — standard auto-approved path
 5. Edit either sample or add new `sample_*.json` files to simulate additional scenarios.
 
-## Optional Notes
+## Notes
 The design intentionally uses hybrid decisioning (AI suggestions + deterministic policy checks) to improve trust, auditability, and enterprise safety.
