@@ -1,0 +1,225 @@
+{
+  "name": "Enterprise AI Onboarding Automation",
+  "tool": "n8n",
+  "version": "1.0",
+  "description": "Prototype workflow scaffold for AI-assisted onboarding orchestration",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "New Hire Intake Trigger",
+      "type": "webhook",
+      "config": {
+        "method": "POST",
+        "path": "onboarding/new-hire"
+      }
+    },
+    {
+      "id": "2",
+      "name": "Normalize Input",
+      "type": "function",
+      "config": {
+        "operation": "map_fields_and_validate_required"
+      }
+    },
+    {
+      "id": "3",
+      "name": "AI Extract + Validate Documents",
+      "type": "http_request",
+      "config": {
+        "endpoint": "{{LLM_API_ENDPOINT}}",
+        "purpose": "document_extraction",
+        "prompt_file": "starter/prompts/prompts.md#document-extraction-and-validation-prompt"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Policy + Confidence Gate",
+      "type": "if",
+      "config": {
+        "conditions": [
+          "overall_confidence >= 0.85",
+          "missing_docs_count == 0"
+        ]
+      }
+    },
+    {
+      "id": "5",
+      "name": "Create Manual Review Ticket",
+      "type": "task_create",
+      "config": {
+        "system": "Jira",
+        "queue": "HR-Compliance",
+        "priority": "High"
+      }
+    },
+    {
+      "id": "6",
+      "name": "Classify Case Type",
+      "type": "http_request",
+      "config": {
+        "endpoint": "{{LLM_API_ENDPOINT}}",
+        "purpose": "case_classification",
+        "prompt_file": "starter/prompts/prompts.md#case-classification-prompt"
+      }
+    },
+    {
+      "id": "7",
+      "name": "Create IT Tasks",
+      "type": "task_create",
+      "config": {
+        "system": "Jira",
+        "queue": "IT-Onboarding",
+        "sla": "D-2"
+      }
+    },
+    {
+      "id": "8",
+      "name": "Create HR Ops Tasks",
+      "type": "task_create",
+      "config": {
+        "system": "Jira",
+        "queue": "HR-Ops",
+        "sla": "D-3"
+      }
+    },
+    {
+      "id": "9",
+      "name": "Generate Personalized Plan",
+      "type": "http_request",
+      "config": {
+        "endpoint": "{{LLM_API_ENDPOINT}}",
+        "purpose": "personalized_plan",
+        "prompt_file": "starter/prompts/prompts.md#personalized-onboarding-plan-prompt"
+      }
+    },
+    {
+      "id": "10",
+      "name": "Draft Welcome Email",
+      "type": "http_request",
+      "config": {
+        "endpoint": "{{LLM_API_ENDPOINT}}",
+        "purpose": "welcome_email",
+        "prompt_file": "starter/prompts/prompts.md#welcome-email-draft-prompt"
+      }
+    },
+    {
+      "id": "11",
+      "name": "Human Approval Gate",
+      "type": "if",
+      "config": {
+        "conditions": [
+          "case_type == 'standard'"
+        ]
+      }
+    },
+    {
+      "id": "12",
+      "name": "Send Communications",
+      "type": "email_slack",
+      "config": {
+        "channels": [
+          "email",
+          "slack"
+        ]
+      }
+    },
+    {
+      "id": "13",
+      "name": "Update Onboarding Tracker",
+      "type": "db_update",
+      "config": {
+        "system": "Airtable",
+        "table": "OnboardingPipeline"
+      }
+    },
+    {
+      "id": "14",
+      "name": "Audit Log",
+      "type": "db_insert",
+      "config": {
+        "system": "Airtable",
+        "table": "WorkflowAudit",
+        "fields": [
+          "workflow_run_id",
+          "prompt_version",
+          "model",
+          "decision_path",
+          "timestamp"
+        ]
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from": "1",
+      "to": "2"
+    },
+    {
+      "from": "2",
+      "to": "3"
+    },
+    {
+      "from": "3",
+      "to": "4"
+    },
+    {
+      "from": "4",
+      "to": "5",
+      "label": "fail"
+    },
+    {
+      "from": "4",
+      "to": "6",
+      "label": "pass"
+    },
+    {
+      "from": "6",
+      "to": "7"
+    },
+    {
+      "from": "6",
+      "to": "8"
+    },
+    {
+      "from": "8",
+      "to": "9"
+    },
+    {
+      "from": "9",
+      "to": "10"
+    },
+    {
+      "from": "10",
+      "to": "11"
+    },
+    {
+      "from": "11",
+      "to": "12",
+      "label": "auto_approved"
+    },
+    {
+      "from": "11",
+      "to": "5",
+      "label": "requires_approval"
+    },
+    {
+      "from": "12",
+      "to": "13"
+    },
+    {
+      "from": "13",
+      "to": "14"
+    }
+  ],
+  "error_handling": {
+    "retry_policy": {
+      "max_retries": 3,
+      "backoff": "exponential"
+    },
+    "dead_letter_queue": "onboarding_failures",
+    "alerts": [
+      "slack:#hr-ops-alerts",
+      "email:it-oncall@company.com"
+    ]
+  }
+}

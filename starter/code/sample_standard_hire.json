@@ -1,0 +1,29 @@
+{
+  "employee": {
+    "full_name": "Jordan Lee",
+    "personal_email": "jordan.lee@example.com",
+    "work_email": "jordan.lee@company.com",
+    "job_title": "Product Designer",
+    "department": "Design",
+    "location": "US-NYC",
+    "manager_name": "Casey Nguyen",
+    "employment_type": "full-time",
+    "start_date": "2026-04-01"
+  },
+  "compliance": {
+    "required_docs_received": [
+      "government_id",
+      "signed_offer",
+      "policy_ack"
+    ]
+  },
+  "access_requirements": {
+    "systems_requested": [
+      "Figma",
+      "Jira",
+      "Slack",
+      "Confluence"
+    ],
+    "privileged_access_requested": false
+  }
+}
