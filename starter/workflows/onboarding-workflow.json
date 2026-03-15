@@ -1,0 +1,398 @@
+{
+  "name": "Employee-onboarding",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Onboarding-form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name"
+            },
+            {
+              "fieldLabel": "Personal Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Job Title"
+            },
+            {
+              "fieldLabel": "Department",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "HR"
+                  },
+                  {
+                    "option": "Sales"
+                  },
+                  {
+                    "option": "Marketing"
+                  },
+                  {
+                    "option": "Engineering"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Location",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Islamabad"
+                  },
+                  {
+                    "option": "Lahore"
+                  },
+                  {
+                    "option": "Peshawar"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Manager Name"
+            },
+            {
+              "fieldLabel": "Employment Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Onsite"
+                  },
+                  {
+                    "option": "Remote"
+                  },
+                  {
+                    "option": "Hybrid"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Start Date",
+              "fieldType": "date"
+            },
+            {
+              "fieldLabel": "Required Systems"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -208,
+        16
+      ],
+      "id": "7856aabe-af78-4fe1-87ed-9de034f02644",
+      "name": "On form submission",
+      "webhookId": "f9c96b5c-c6f1-4c59-b212-c56c787a423b"
+    },
+    {
+      "parameters": {
+        "text": "=New Hire Submission Details:\n- Name: {{ $json[\"Full Name\"] }}\n- Email: {{ $json[\"Personal Email\"] }}\n- Role: {{ $json[\"Job Title\"] }}\n- Dept: {{ $json.Department }}\n- Location: {{ $json.Location }}\n- Manager: {{ $json[\"Manager Name\"] }}\n- Type: {{ $json[\"Employment Type\"] }}\n- Start Date: {{ $json[\"Start Date\"] }}\n- Systems Requested: {{ $json[\"Required Systems\"] }}",
+        "schemaType": "fromJson",
+        "jsonSchemaExample": "\n{\n  \n  \n\"Full Name\": \n\"Mohammad Irfan\",\n  \n  \n\"Personal Email\": \n\"irfaanexe@gmail.com\",\n  \n  \n\"Job Title\": \n\"ai engineer\",\n  \n  \n\"Department\": \n\"Engineering\",\n  \n  \n\"Location\": \n\"Islamabad\",\n  \n  \n\"Manager Name\": \n\"Ahmad\",\n  \n  \n\"Employment Type\": \n\"Hybrid\",\n  \n  \n\"Start Date\": \n\"2026-03-14\",\n  \n  \n\"Required Systems\": \n\"none\",\n  \n  \n\"submittedAt\": \n\"2026-03-14T08:06:44.148-04:00\",\n  \n  \n\"formMode\": \n\"test\"\n  \n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        16,
+        16
+      ],
+      "id": "295fe300-ebff-4091-b6cd-bbba6d804866",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        240,
+        208.203125
+      ],
+      "id": "61729723-d9b6-48de-b673-61cd6b44c60e",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "JRBo8SouEl4x9RSp",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const tasks = [\n{task:\"Create company email\",team:\"IT\"},\n{task:\"Provision Slack access\",team:\"IT\"},\n{task:\"Provision Drive access\",team:\"IT\"},\n{task:\"Assign compliance training\",team:\"HR\"},\n{task:\"Schedule orientation\",team:\"HR\"},\n{task:\"Prepare team onboarding\",team:\"Manager\"}\n];\n\nreturn tasks.map(t => ({json:t}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "1c669cff-663a-4768-8af0-7464b509afaf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Role: You are a Senior HR Operations Specialist and Onboarding Designer.\nTask: Create a detailed 5-day onboarding plan for a new hire.\n\nEmployee Data:\n\nName: {{ $('Information Extractor').item.json.output[\"Full Name\"] }}\n\nRole: {{ $('Information Extractor').item.json.output[\"Job Title\"] }}\n\nDepartment: {{ $('Information Extractor').item.json.output.Department }}\n\nInstructions:\n\nPersonalization: If the role is technical (e.g., Data Science, Engineering), include deep dives into the codebase and specific tools like GitHub or AWS. If it is non-technical, focus on CRM or project management.\n\nStructure: Provide a breakdown for Day 1 through Day 5.\n\nMandatory Sections: For each day, include:\n\nMeetings: Who should they meet? (e.g., \"Meet with the Lead Data Scientist\").\n\nTools Training: Which software should they learn today? (e.g., \"Intro to the Company's MLflow instance\").\n\nFirst Tasks: Give them a low-stakes \"win\" (e.g., \"Set up your environment and run the 'Hello World' notebook\").\n\nOutput Format: Use clean Markdown with headers and bullet points."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        768,
+        0
+      ],
+      "id": "af803caf-590b-4fc2-94bb-1c7d43214c46",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L6CWErmds3Usz2RR",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a welcome email for:\n- Employee Name: {{ $('Information Extractor').item.json.output[\"Full Name\"] }}\n- Job Role: {{ $('Information Extractor').item.json.output[\"Job Title\"] }}\n- Manager: {{ $('Information Extractor').item.json.output[\"Manager Name\"] }}\n- Office Location: {{ $('Information Extractor').item.json.output.Location }}\n\nInclude instructions for their first day on {{ $('Information Extractor').item.json.output[\"Start Date\"] }}\nInstructions: Keep it brief, mention Islamabad as the location, and include onboarding@company.com as the contact.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "88955385-6574-441e-af33-12eef211999b",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        208
+      ],
+      "id": "353a1094-9df8-44f4-a460-947247b66fd5",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "JRBo8SouEl4x9RSp",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "irfaanexe@gmail.com",
+        "toEmail": "=irfaanyousafzai@gmail.com",
+        "subject": "New hire onboarding started.",
+        "emailFormat": "text",
+        "text": "=New hire onboarding started.\n\nEmployee: {{ $('Information Extractor').item.json.output[\"Full Name\"] }}\nRole: {{ $('Information Extractor').item.json.output[\"Job Title\"] }}\nDepartment: {{ $('Information Extractor').item.json.output.Department }}\n\nTasks generated and onboarding plan created.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "056a3b5d-6c0d-4544-8371-e5676eb61194",
+      "name": "Send an Email",
+      "webhookId": "5b9d65d5-4437-4445-8e04-b3b4de82b271",
+      "credentials": {
+        "smtp": {
+          "id": "ijflvOXh7D6GHRJF",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b163c3fd-92ec-4b5d-b243-aad63daa4a32",
+              "leftValue": "={{ $json.output[\"Personal Email\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        16
+      ],
+      "id": "0eaf5370-7cad-47d7-bc7c-7dc52dcc2a1b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "errorMessage": "No valid email."
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        560,
+        176
+      ],
+      "id": "ce1276a1-1cd5-40b5-a0b7-0d79a7a1e5f7",
+      "name": "Stop and Error"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8024a921-d72d-45d3-b577-801adbfb747e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "93cb471fda0d9502d4d4e0da63e9ac9e455433d8ffe67ccce109dd39d34c9bd7"
+  },
+  "id": "jWXpCa8AdKmc0ZWF",
+  "tags": []
+}

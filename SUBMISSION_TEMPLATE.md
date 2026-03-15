@@ -1,14 +1,13 @@
 # Candidate Submission Template
 
 ## Candidate Information
-- Full Name:
-- Email:
-- LinkedIn or Portfolio:
-- Submission Date:
+- Full Name: Mohammad Irfan 
+- Email: irfaanexe@gmail.com
+- LinkedIn or Portfolio: https://www.linkedin.com/in/mohammad-irfaands/
+- Submission Date: 15-03-2026
 
 ## Overview
-Provide a short summary of your solution.
-
+This intelligent onboarding system transforms a traditionally fragmented and manual HR process into a unified, AI-driven orchestration workflow. By leveraging n8n as a central nervous system and integrating high-performance models like Llama 3.3 and Gemini 1.5 Flash, the solution automates everything from structured data extraction to the generation of role-specific, 5-day onboarding roadmaps. The inclusion of a validation gate ensures data integrity, while automated email dispatch provides a seamless, personalized welcome experience for new hires in locations like Islamabad or Lahore. Ultimately, this project demonstrates how modern AI can bridge the gap between HR, IT, and management, significantly reducing operational overhead while improving the consistency and visibility of the employee lifecycle.
 ## Task 1: AI-Powered Automation Design
 
 ### Workflow Logic
@@ -55,7 +54,7 @@ Examples:
 - Video walkthrough
 
 ### Files Included
-List the files you added.
+
 
 ### Flow of Data
 Explain how data moves through your demo.
